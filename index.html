@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>پرونده‌های کارآگاه یگانه</title>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--g:#c9a24b}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+body{min-height:100dvh;background:radial-gradient(ellipse at 50% 0,#2a1030,#07050b 70%) fixed;color:#ecdcb4;font-family:Vazirmatn,Tahoma,sans-serif;padding:calc(18px + env(safe-area-inset-top)) 14px calc(28px + env(safe-area-inset-bottom));display:flex;justify-content:center}
+main{width:100%;max-width:520px;position:relative}
+.rain{position:fixed;inset:0;pointer-events:none;opacity:.22;background:repeating-linear-gradient(105deg,transparent 0 6px,#9ab4d455 6px 7px);animation:r .5s linear infinite}
+@keyframes r{to{background-position:-14px 28px}}
+h1{text-align:center;font-size:28px;font-weight:900;color:var(--g);text-shadow:0 0 20px #c9a24b66;line-height:1.6}
+.sub{text-align:center;font-size:13px;opacity:.85;line-height:2;margin:6px 0 16px}
+.card{display:flex;gap:12px;align-items:center;margin:12px 0;padding:14px;border:1px solid var(--g);border-radius:16px;background:linear-gradient(135deg,var(--c1),var(--c2));box-shadow:0 8px 24px #000a;cursor:pointer;transition:transform .15s}
+.card:active{transform:scale(.98)}
+.card.lock{filter:grayscale(.9) brightness(.55);cursor:default}
+.card svg{flex:0 0 96px;width:96px;height:150px;filter:drop-shadow(0 4px 6px #000)}
+.tx b{display:block;font-size:11px;color:var(--g)}
+.tx h2{font-size:21px;margin:2px 0 6px;color:#fff3cf}
+.tx p{font-size:12.5px;line-height:1.95}
+.st{display:inline-block;margin-top:8px;font-size:12px;padding:3px 12px;border-radius:20px;border:1px solid var(--g);background:#0008}
+.rs{display:block;margin:18px auto 0;font:inherit;font-size:12px;color:#ecdcb4aa;background:none;border:0;text-decoration:underline}
+#toast{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom));left:16px;right:16px;max-width:488px;margin:auto;background:#120b14f2;border:1px solid var(--g);border-radius:12px;padding:10px 14px;font-size:13px;line-height:1.9;opacity:0;transition:.3s;pointer-events:none;text-align:center}
+#toast.on{opacity:1}
+@media(prefers-reduced-motion:reduce){.rain{animation:none}}
+</style></head><body><div class="rain"></div>
+<main>
+<h1>پرونده‌های کارآگاه یگانه</h1>
+<p class="sub">سه پرونده. یک نام که در هر سه تکرار می‌شود.<br>هر قفلی که بگشایی، در بعدی را نشان می‌دهد.</p>
+<div id="list"></div>
+<button class="rs" onclick="reset()">بازنشانی پیشرفت</button>
+</main>
+<div id="toast"></div>
+<script>
+"use strict";
+const $=s=>document.querySelector(s);
+const tg=window.Telegram&&Telegram.WebApp;try{tg.ready();tg.expand()}catch(e){}
+const rd=k=>{try{return JSON.parse(localStorage[k])||{}}catch(e){return{}}};
+const a=rd('yg409'),b=rd('yg_ch');            // yg409 = ذخیره‌ی بازی فصل ۱ (won) ، yg_ch = پیشرفت فصل‌های ۲ و ۳
+const done=[!!a.won,!!b.c2,!!b.c3];
+const READY=[1,0,0];                           // وقتی ch2.html / ch3.html را آپلود کردی، عدد هر فصل را 1 کن
+const open=i=>i==0||done[i-1];
+const fig=(d,hair,acc,hat)=>`<svg viewBox="0 0 96 150"><ellipse cx="48" cy="144" rx="30" ry="5" fill="#0007"/><rect x="21" y="68" width="11" height="40" rx="5" fill="${d[0]}"/><rect x="64" y="68" width="11" height="40" rx="5" fill="${d[0]}"/><path d="M32 66h32l18 78H14z" fill="${d[0]}"/><path d="M38 66h20l8 78H30z" fill="${d[1]}" opacity=".6"/><rect x="31" y="90" width="34" height="5" fill="${acc}"/><path d="M29 38c0-24 38-24 38 0v46c-5 4-9 2-10-6V50H39v28c-1 8-5 10-10 6z" fill="${hair}"/><rect x="43" y="56" width="10" height="12" fill="#e8b896"/><ellipse cx="48" cy="44" rx="14" ry="16" fill="#f5d2b8"/><path d="M33 42c4-15 26-15 30 0-8-6-22-8-30 0z" fill="${hair}"/><g><ellipse cx="42" cy="46" rx="3.8" ry="4.6" fill="#fff"/><circle cx="42" cy="47" r="2.7" fill="#7a4a22"/><circle cx="41" cy="45.5" r="1" fill="#fff"/><ellipse cx="54" cy="46" rx="3.8" ry="4.6" fill="#fff"/><circle cx="54" cy="47" r="2.7" fill="#7a4a22"/><circle cx="53" cy="45.5" r="1" fill="#fff"/></g><path d="M44 54q4 3 8 0" stroke="#b0485a" stroke-width="1.4" fill="none"/>${hat}</svg>`;
+const CH=[
+{n:'فصل یکم',p:'تالار قصر',t:'قتل لرد ویکتور',c:['#3a0f1e','#170a14'],
+ s:'لرد ویکتور در اتاقی که از داخل قفل بود مرده است. هر دو ساعت روی ۳ بامداد ایستاده‌اند و قاتل هنوز در قصر است.',f:'ch1.html',
+ g:fig(['#8a1d38','#a82a48'],'#2a1a24','#d4aa4f','<ellipse cx="46" cy="26" rx="17" ry="6" fill="#3a0a24" transform="rotate(-8 46 26)"/><ellipse cx="46" cy="22" rx="11" ry="5" fill="#5e1a3d" transform="rotate(-8 46 22)"/>')},
+{n:'فصل دوم',p:'قصر ملکه',t:'بوسه‌ی مرگ',c:['#0b3a30','#10161a'],
+ s:'در شب جشن تاج‌گذاری، ملکه‌ی ایزابل لبه‌ی جام نقره را می‌بوسد و پیش چشم همه می‌میرد. روی جام همان مُهر ماه خونین است که در پرونده‌ی ۴۰۹ پیدا کردی.',f:'ch2.html',
+ g:fig(['#0e6b4f','#18a07a'],'#1c1424','#f3d27a','<path d="M33 28l5-12 5 8 5-12 5 12 5-8 5 12z" fill="#f3d27a" stroke="#8a6a22"/><circle cx="48" cy="14" r="2.6" fill="#e0245e"/>')},
+{n:'فصل سوم',p:'زیرزمین جنگل',t:'ویروس لابستر',c:['#16301f','#06100c'],
+ s:'ردپای بوسه‌ی مرگ به آزمایشگاهی زیرزمینی در دل جنگل می‌رسد؛ جایی که ویروس «لابستر» ساخته شده. باید بفهمی چطور ساخته شد و چه کسی پشت آن است.',f:'ch3.html',
+ g:fig(['#3d4a2a','#5a6a3a'],'#241810','#6fe3c1','<rect x="32" y="26" width="32" height="9" rx="4" fill="#12302a" stroke="#6fe3c1"/><circle cx="41" cy="30.5" r="3.5" fill="#6fe3c1"/><circle cx="55" cy="30.5" r="3.5" fill="#6fe3c1"/>')}];
+function draw(){$('#list').innerHTML=CH.map((c,i)=>{const o=open(i);
+ return `<div class="card ${o?'':'lock'}" style="--c1:${c.c[0]};--c2:${c.c[1]}" onclick="go(${i})">${c.g}<div class="tx"><b>${c.n} — ${c.p}</b><h2>${o?c.t:'پرونده‌ی مُهروموم‌شده'}</h2><p>${o?c.s:'با حل‌کردن «'+CH[i-1].t+'» باز می‌شود.'}</p><span class="st">${done[i]?'✓ حل شد':o?(READY[i]?'▶ شروع':'به‌زودی'):'🔒 قفل'}</span></div></div>`}).join('')}
+function toast(m){const e=$('#toast');e.textContent=m;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),3200)}
+function go(i){try{tg.HapticFeedback.impactOccurred('light')}catch(e){}
+ if(!open(i)){toast('این پرونده قفل است؛ ابتدا «'+CH[i-1].t+'» را حل کن.');return}
+ if(!READY[i]){toast('این فصل در حال ساخت است و به‌زودی باز می‌شود.');return}
+ location.href=CH[i].f}
+function reset(){if(confirm('همه‌ی پیشرفت پاک شود؟')){try{localStorage.removeItem('yg409');localStorage.removeItem('yg_ch')}catch(e){}location.reload()}}
+draw();
+</script></body></html>

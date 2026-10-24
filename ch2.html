@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<title>فصل دوم — بوسه‌ی مرگ</title>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#050308;overflow:hidden;color:#f3e6c4;font-family:Vazirmatn,Tahoma,sans-serif;user-select:none;touch-action:manipulation;overscroll-behavior:none}
+canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none}
+#hud{position:fixed;top:calc(8px + env(safe-area-inset-top));left:8px;right:8px;display:flex;gap:6px;align-items:center;pointer-events:none}
+#hud>*{pointer-events:auto}
+#rn{flex:1;font-size:12px;background:#000a;border:1px solid #c9a24b66;border-radius:8px;padding:4px 9px}
+.ib{font-size:20px;background:#120b14dd;border:1px solid #c9a24b;border-radius:10px;width:38px;height:38px;color:#fff}
+#say{position:fixed;left:10px;right:10px;bottom:calc(12px + env(safe-area-inset-bottom));max-width:540px;margin:auto;background:#120b14f0;border:1px solid #c9a24b;border-radius:12px;padding:10px 14px;font-size:13px;line-height:1.9;opacity:0;transition:.3s;pointer-events:none}
+#say.on{opacity:1}
+#ov{position:fixed;inset:0;background:#050308ee;display:none;flex-direction:column;align-items:center;padding:18px;z-index:9;text-align:center;overflow:auto}
+#ov>*{margin-block:auto;max-width:420px}
+#ov h1{font-size:28px;font-weight:900;color:#f3d27a;line-height:1.6;text-shadow:0 0 18px #f3d27a66}
+#ov h3{color:#f3d27a;margin-bottom:8px}#ov p{line-height:2.1;font-size:14.5px;margin:10px 0}
+.b,.b2,select{font:inherit;color:#f6e2a8;background:linear-gradient(#0e6b4f,#073a2a);border:1px solid #f3d27a;border-radius:10px;padding:9px 18px;margin:5px;font-size:15px}
+.b2{background:#2a1a22;border-color:#6a5a4a;font-size:13px}select{display:block;width:100%;background:#1a1220}
+.dg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px 0}.dg .b{padding:12px 0;margin:0}
+</style></head><body>
+<canvas id="cv"></canvas>
+<div id="hud"><button class="ib" onclick="location.href='index.html'" aria-label="فهرست">☰</button><span id="rn"></span><span id="inv" style="display:flex;gap:6px"></span></div>
+<div id="say"></div><div id="ov"></div>
+<script>
+"use strict";
+if(!CanvasRenderingContext2D.prototype.roundRect)CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){r=Math.min(r||0,w/2,h/2);this.moveTo(x+r,y);this.arcTo(x+w,y,x+w,y+h,r);this.arcTo(x+w,y+h,x,y+h,r);this.arcTo(x,y+h,x,y,r);this.arcTo(x,y,x+w,y,r);this.closePath()};
+const $=s=>document.querySelector(s),W=360,H=640,cv=$('#cv'),g=cv.getContext('2d'),dpr=Math.min(devicePixelRatio||1,2);
+const tg=window.Telegram&&Telegram.WebApp;try{tg.ready()}catch(e){}try{tg.expand()}catch(e){}try{tg.disableVerticalSwipes()}catch(e){}
+const hap=t=>{try{tg.HapticFeedback.impactOccurred(t||'light')}catch(e){}};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+let c=g,k=1,ox=0,oy=0;
+function rs(){cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;k=Math.min(innerWidth/W,innerHeight/H);ox=(innerWidth-W*k)/2;oy=(innerHeight-H*k)/2}
+/* ---------- save ---------- */
+const rdb=()=>{try{return JSON.parse(localStorage.yg_ch)||{}}catch(e){return{}}};
+let S={room:0,inv:[],f:{}};Object.assign(S,rdb().s2||{});
+const save=()=>{try{const b=rdb();b.s2=S;localStorage.yg_ch=JSON.stringify(b)}catch(e){}};
+const has=i=>S.inv.includes(i),rem=i=>{S.inv=S.inv.filter(x=>x!==i)};
+/* ---------- audio ---------- */
+let A;const au=()=>A||(A=new(window.AudioContext||window.webkitAudioContext)());
+function tn(f,d,v=.08,ty='sine',f2){try{const a=au(),T=a.currentTime,o=a.createOscillator(),n=a.createGain();o.type=ty;o.frequency.setValueAtTime(f,T);if(f2)o.frequency.exponentialRampToValueAtTime(f2,T+d);n.gain.setValueAtTime(v,T);n.gain.exponentialRampToValueAtTime(.0001,T+d);o.connect(n);n.connect(a.destination);o.start(T);o.stop(T+d)}catch(e){}}
+function nb(d,loop){const a=au(),n=a.sampleRate*d|0,b=a.createBuffer(1,n,a.sampleRate),x=b.getChannelData(0);for(let i=0;i<n;i++)x[i]=Math.random()*2-1;const s=a.createBufferSource();s.buffer=b;s.loop=!!loop;return s}
+function nz(d,v,fr){try{const a=au(),s=nb(d),f=a.createBiquadFilter(),n=a.createGain();f.type='bandpass';f.frequency.value=fr;n.gain.setValueAtTime(v,a.currentTime);n.gain.exponentialRampToValueAtTime(.0001,a.currentTime+d);s.connect(f);f.connect(n);n.connect(a.destination);s.start()}catch(e){}}
+function rainLoop(){try{const a=au(),s=nb(3,1),f=a.createBiquadFilter(),n=a.createGain();f.type='bandpass';f.frequency.value=2600;f.Q.value=.4;n.gain.value=.03;s.connect(f);f.connect(n);n.connect(a.destination);s.start()}catch(e){}}
+const SFX={step:()=>nz(.08,.18,180),chime:()=>[523,659,784,1047].forEach((f,i)=>setTimeout(()=>tn(f,1.2,.07),i*130)),err:()=>tn(150,.3,.12,'sine',80),pick:()=>{tn(2400,.3,.06);tn(3600,.2,.04)},bark:()=>{tn(520,.15,.1,'sawtooth',250);nz(.07,.15,2500)}};
+addEventListener('pointerdown',()=>{try{au().resume()}catch(e){}if(!rs.r){rs.r=1;rainLoop()}},{once:true});
+/* ---------- draw helpers (use global ctx c) ---------- */
+const LG=(x0,y0,x1,y1,st)=>{const q=c.createLinearGradient(x0,y0,x1,y1);st.forEach((s,i)=>q.addColorStop(i/(st.length-1),s));return q};
+const RG=(x,y,r,st)=>{const q=c.createRadialGradient(x,y,0,x,y,r);st.forEach((s,i)=>q.addColorStop(i/(st.length-1),s));return q};
+const R=(x,y,w,h,f,r=0)=>{c.fillStyle=f;c.beginPath();c.roundRect(x,y,w,h,r);c.fill()};
+const E=(x,y,rx,ry,f,rot=0)=>{c.fillStyle=f;c.beginPath();c.ellipse(x,y,rx,ry,rot,0,7);c.fill()};
+const PG=(p,f)=>{c.fillStyle=f;c.beginPath();p.forEach((q,i)=>i?c.lineTo(q[0],q[1]):c.moveTo(q[0],q[1]));c.closePath();c.fill()};
+const L=(x0,y0,x1,y1,col,w=1)=>{c.strokeStyle=col;c.lineWidth=w;c.beginPath();c.moveTo(x0,y0);c.lineTo(x1,y1);c.stroke()};
+const TX=(s,x,y,sz,col)=>{c.font=`700 ${sz}px Vazirmatn,Tahoma`;c.direction='rtl';c.textAlign='center';c.fillStyle=col;c.fillText(s,x,y)};
+const GD=(a,b)=>LG(a,0,b,0,['#8a6a22','#fff0a0','#8a6a22']);
+function flame(x,y,t){const f=Math.sin(t*14+x)*1.6;c.fillStyle=RG(x,y-6,18,['#fff6b0','#ff9a2a','#ff3a0a00']);c.beginPath();c.moveTo(x-5,y+8);c.quadraticCurveTo(x-6+f,y-6,x+f,y-22);c.quadraticCurveTo(x+6+f,y-6,x+5,y+8);c.fill()}
+function floor(a,b){R(0,400,W,240,LG(0,400,0,640,[a,b]));for(let i=0;i<=10;i++){const x=30+i*30;L(x,400,180+(x-180)*2.6,640,'#0006',1.2)}for(let j=1;j<8;j++){const y=400+Math.pow(j/7,1.7)*240;L(0,y,W,y,'#0006',1.2)}}
+function door(x,col){c.fillStyle=LG(0,380,0,460,['#030205','#150a10']);c.beginPath();c.moveTo(x,460);c.lineTo(x,380);c.arc(x+28,380,28,Math.PI,0);c.lineTo(x+56,460);c.closePath();c.fill();c.strokeStyle=col;c.lineWidth=4;c.stroke();E(x+44,425,3,3,col)}
+function arch(x,y,w,h,f){c.fillStyle=f;c.beginPath();c.moveTo(x,y+h);c.lineTo(x,y);c.arc(x+w/2,y,w/2,Math.PI,0);c.lineTo(x+w,y+h);c.closePath();c.fill()}
+/* ---------- static art (cached per room) ---------- */
+const ART=[
+()=>{R(0,0,W,H,'#0a0612');R(0,60,W,340,LG(0,60,0,400,['#2e1032','#4e1c3a']));
+ for(let y=70;y<400;y+=26){L(0,y,W,y,'#0005');for(let x=((y-70)/26%2)*30;x<W;x+=60)L(x,y,x,y+26,'#0005')}
+ arch(150,130,60,70,LG(0,100,0,200,['#0b1230','#2a3d70']));E(192,130,12,12,'#eef4ff');E(192,130,34,34,RG(192,130,34,['#cfe0ff55','#0000']));
+ c.strokeStyle='#9a7a4a';c.lineWidth=5;c.beginPath();c.moveTo(150,200);c.lineTo(150,130);c.arc(180,130,30,Math.PI,0);c.lineTo(210,200);c.closePath();c.stroke();L(180,100,180,200,'#9a7a4a',3);L(150,155,210,155,'#9a7a4a',3);
+ [118,242].forEach(x=>{R(x-9,70,18,330,LG(x-9,0,x+9,0,['#7a7088','#d8cfe0','#5a5068']));R(x-13,62,26,10,'#e0d8e8',2);R(x-13,392,26,10,'#e0d8e8',2)});
+ R(30,150,76,170,'#7a1428',4);R(30,150,76,10,GD(30,106));for(let i=0;i<8;i++)L(34+i*9,320,34+i*9,332,'#d4aa4f',2);c.strokeStyle='#d4aa4f';c.lineWidth=3;c.beginPath();c.moveTo(48,300);c.lineTo(66,250);c.lineTo(80,284);c.lineTo(94,260);c.stroke();E(70,206,12,12,'#d4aa4f');E(70,206,7,7,'#7a1428');
+ E(280,170,36,36,GD(244,316));E(280,170,29,29,'#f6ecd2');for(let i=0;i<12;i++){const a=i*Math.PI/6;L(280+Math.cos(a)*23,170+Math.sin(a)*23,280+Math.cos(a)*27,170+Math.sin(a)*27,'#333',1.5)}L(280,170,280,147,'#222',3);L(280,170,258,170,'#222',4);E(280,170,3,3,'#222');
+ floor('#2c1422','#0c0610');PG([[150,400],[210,400],[300,640],[60,640]],LG(0,400,0,640,['#7a0e24','#b01c3c','#5e0a1a']));c.strokeStyle='#f3d27a';c.lineWidth=2;c.beginPath();c.moveTo(158,404);c.lineTo(202,404);c.lineTo(280,640);c.lineTo(82,640);c.closePath();c.stroke();
+ R(110,396,140,10,'#5a4a62');R(120,388,120,9,'#6a5a72');
+ R(145,240,70,150,'#4a0e1c',10);c.strokeStyle=GD(145,215);c.lineWidth=5;c.beginPath();c.roundRect(145,240,70,150,10);c.stroke();PG([[145,240],[180,196],[215,240]],GD(145,215));R(158,300,44,60,'#8a1d38',6);E(180,222,6,6,'#e0245e');
+ E(180,525,92,12,'#0008');R(95,470,170,14,LG(0,470,0,484,['#a06a38','#5a3418']),4);R(105,484,8,40,'#4a2a14');R(247,484,8,40,'#4a2a14');PG([[100,484],[260,484],[250,520],[110,520]],'#ffffff0c');
+ PG([[168,426],[192,426],[188,450],[172,450]],GD(168,192));L(169,430,191,430,'#c0183a',3);R(177,450,6,16,GD(177,183));E(180,468,13,3,'#c9a24b');
+ R(150,60,60,6,GD(150,210));L(180,0,180,60,'#9a7a4a',2);door(6,'#6fe3c1');door(298,'#c9a24b')},
+()=>{R(0,0,W,H,'#041014');R(0,40,W,360,LG(0,40,0,400,['#061e22','#0e3a34']));
+ c.strokeStyle='#6fe3c155';c.lineWidth=2;c.beginPath();c.moveTo(0,400);c.lineTo(0,150);c.quadraticCurveTo(90,-10,180,40);c.quadraticCurveTo(270,-10,360,150);c.lineTo(360,400);c.stroke();[90,180,270].forEach(x=>L(x,400,x,70,'#6fe3c133',2));[150,250,330].forEach(y=>L(0,y,W,y,'#6fe3c122',2));
+ E(270,95,22,22,'#effff8');E(270,95,70,70,RG(270,95,70,['#6fe3c155','#0000']));
+ E(50,404,95,50,LG(0,360,0,450,['#14503a','#082a1e']));E(330,408,85,44,LG(0,364,0,450,['#124632','#062418']));
+ R(0,400,W,240,LG(0,400,0,640,['#0c2418','#040e08']));E(180,500,140,42,'#1a4a38');for(let i=0;i<9;i++)E(70+i*27,500+(i%3)*8,10,5,'#2a6a50');
+ R(14,322,84,108,'#3a2a18');PG([[4,326],[56,280],[108,326]],'#6a4220');R(38,364,30,66,'#120a06');R(72,340,16,16,'#ffd27a55');
+ L(170,400,170,326,'#2a7a4a',5);E(180,492,44,13,'#6a7a74');R(166,452,28,40,LG(166,0,194,0,['#6a7a74','#b8c8c0','#5a6a64']),4);PG([[180,452],[218,438],[182,460]],GD(180,218));
+ L(180,452,214,440,'#fff3',1);door(298,'#c9a24b')},
+()=>{R(0,0,W,H,'#14061a');R(0,60,W,340,LG(0,60,0,400,['#3a1236','#2a0c28']));for(let y=70;y<400;y+=26)L(0,y,W,y,'#0005');
+ [[0,1],[360,-1]].forEach(([x,d])=>{PG([[x,60],[x+d*54,60],[x+d*30,400],[x,400]],LG(0,0,54,0,['#5a0e22','#9a1c3a','#5a0e22']))});
+ R(28,150,80,150,GD(28,108),4);R(36,158,64,134,'#2a0a1a');E(68,214,16,16,'#e8c8b0');PG([[42,292],[94,292],[84,244],[52,244]],'#8a1d38');E(68,172,7,7,'#c0183a');
+ E(180,262,46,64,LG(0,200,0,324,['#e8f0f8','#8aa0b8']));c.strokeStyle=GD(134,226);c.lineWidth=7;c.beginPath();c.ellipse(180,262,46,64,0,0,7);c.stroke();c.strokeStyle='#fff9';c.lineWidth=4;c.beginPath();c.moveTo(158,222);c.quadraticCurveTo(166,204,180,198);c.stroke();
+ floor('#2e1226','#0c0610');E(180,570,140,34,'#5a1630');E(180,570,110,24,'#7a1a3a');
+ R(106,342,148,14,LG(0,342,0,356,['#a06a38','#5a3418']),4);R(118,356,124,72,'#5a3418');R(206,322,9,22,'#c0183a');R(206,314,9,9,'#d4aa4f');R(140,318,16,26,'#b66bff99',6);
+ R(235,392,115,100,'#6a1630',10);R(235,380,115,32,'#eadcc8',10);R(238,296,6,196,GD(238,244));R(344,296,6,196,GD(344,350));PG([[238,296],[350,296],[350,320],[238,330]],'#8a1d3888');
+ [[90,330],[330,296]].forEach(([x,y])=>{R(x-4,y+4,8,400-y-4,GD(x-4,x+4));E(x,y+4,10,3,'#d4aa4f')});door(6,'#c9a24b')}];
+const bgc=[];function bgOf(r){if(!bgc[r]){const o=document.createElement('canvas');o.width=W*2;o.height=H*2;const x=o.getContext('2d');x.scale(2,2);c=x;ART[r]();c=g;bgc[r]=o}return bgc[r]}
+/* ---------- state & characters ---------- */
+let P={x:180,y:560,tx:180,ty:560,w:0,mv:0,stp:0},pend=null,fade=1,flash=0,started=false,cur=[];
+const dog={x:140,y:575,f:1,w:0,mv:0,b:0};
+function bark(){dog.b=.5;dog.f=P.x>dog.x?1:-1;SFX.bark();hap('medium')}
+function say(t){const e=$('#say');e.textContent=t;e.classList.add('on');clearTimeout(say.t);say.t=setTimeout(()=>e.classList.remove('on'),9000)}
+function me(t){const s=.5+(P.y-412)/203*.6,w=Math.sin(P.w)*P.mv,bob=Math.abs(Math.cos(P.w))*2*P.mv+Math.sin(t*2)*1.2,hr=LG(-16,-124,16,-60,['#2a1a30','#0d0810']);
+ c.save();c.translate(P.x,P.y);c.scale(s,s);E(0,0,28,6,'#0006');
+ PG([[-15,-84],[15,-84],[38,0],[-38,0]],LG(-38,0,38,0,['#075a42','#1fb88a','#075a42']));PG([[-5,-80],[5,-80],[14,0],[-14,0]],'#f3d27a2a');L(-38,-2,38,-2,'#f3d27a',3);for(let i=-3;i<=3;i++)E(i*10,-8-Math.abs(i)*1.2,1.6,1.6,'#fff0a0');
+ c.translate(0,-bob);R(-18,-124,36,70,hr,16);PG([[-14,-92],[14,-92],[12,-62],[-12,-62]],'#0e6b4f');R(-14,-64,28,5,GD(-14,14));E(0,-78,3,3,'#e0245e');
+ for(const kk of[-1,1]){c.save();c.translate(kk*16,-88);c.rotate(w*kk*.4);R(-4,0,8,30,'#0e6b4f',4);R(-5,22,10,5,'#f3d27a',2);E(0,32,3.6,3.6,'#f1cfb0');c.restore()}
+ R(-3,-100,6,9,'#e8b896');E(0,-110,13,15,LG(-13,-125,13,-95,['#ffe6d0','#f0c2a2']));
+ c.fillStyle=hr;c.beginPath();c.moveTo(-14,-110);c.quadraticCurveTo(-16,-132,0,-132);c.quadraticCurveTo(16,-132,14,-110);c.quadraticCurveTo(10,-118,6,-112);c.quadraticCurveTo(2,-120,-2,-112);c.quadraticCurveTo(-6,-119,-10,-112);c.quadraticCurveTo(-13,-117,-14,-110);c.fill();
+ for(const kk of[-1,1]){E(kk*6,-108,4.6,5.4,'#fff');E(kk*6,-107.5,3.5,4.2,LG(0,-112,0,-103,['#1f5a4a','#7a4a22','#d4923a']));E(kk*6,-107.3,1.8,2.3,'#0a0508');E(kk*6-1.3,-109,1.2,1.2,'#fff');L(kk*10.5,-116,kk*3,-117.5,'#1a0e14',1.2)}
+ E(-8.5,-102,3,1.8,'#e6647844');E(8.5,-102,3,1.8,'#e6647844');c.strokeStyle='#b0485a';c.lineWidth=1.3;c.beginPath();c.arc(0,-102,3,.25,Math.PI-.25);c.stroke();
+ PG([[-15,-128],[-9,-142],[-4,-132],[0,-148],[4,-132],[9,-142],[15,-128]],GD(-15,15));E(0,-142,2.4,2.4,'#e0245e');E(-9,-136,1.6,1.6,'#6fe3c1');E(9,-136,1.6,1.6,'#6fe3c1');
+ c.restore()}
+function dogDraw(t){const s=.38+(dog.y-412)/203*.5;c.save();c.translate(dog.x,dog.y);c.scale(s*dog.f,s);E(0,0,24,5,'#0006');
+ c.save();c.translate(-19,-26);c.rotate(-.9+Math.sin(t*(dog.mv?16:9))*.45);R(-2.5,-17,5,19,'#e8741a',3);R(-2.5,-19,5,6,'#fff3e0',3);c.restore();
+ [[-13,0],[-8,Math.PI],[9,Math.PI],[14,0]].forEach(([x,p])=>{c.save();c.translate(x,-15);c.rotate(Math.sin(dog.w+p)*.75*dog.mv);R(-2.8,0,5.6,15,'#d96a14',2);E(0,15,4,2.2,'#fff3e0');c.restore()});
+ E(0,-24,22,11.5,LG(0,-36,0,-12,['#ffa24a','#f07a1c','#c9600e']));E(9,-19,10,7,'#fff3e0');R(14,-35,5,13,'#c31e3a',2);
+ c.save();c.translate(19,-33-(dog.b>0?3:0));E(0,0,10.5,9.5,'#f08a2a');E(9,3.5,8,5.5,'#fff0dc');if(dog.b>0)E(10,7,6,3,'#3a0a10');E(15,1,2.8,2.2,'#1a0e0a');E(-4,-2,4.5,9,'#b54e0a',.35);E(3,-2.5,2,2.4,'#1a0e0a');c.restore();c.restore();
+ if(dog.b>0){R(dog.x-24,dog.y-72*s-14,48,22,'#fff5e0',8);TX('هاپ!',dog.x,dog.y-72*s+2,13,'#b3480a')}}
+/* ---------- items, puzzles, rooms ---------- */
+const IT={kg:['🗝️','کلید برنجی باغ','پشت ملیله‌ی شکار پنهان بود؛ دسته‌اش به شکل گل نیلوفر است.'],kc:['🔑','کلید اتاق ملکه','کلیدی ظریف با نشان تاج.'],sp:['🧪','شیره‌ی نیلوفر شبتاب','سمی که فقط در تاریکی می‌درخشد. با آن می‌شود چیزهای مشکوک را آزمود.'],sl:['📜','برگه‌ی سفارش','سفارش شیره‌ی نیلوفر «برای یک رنگ‌آمیزی سلطنتی»، با امضای ندیمه‌ی ارشد سلین.'],lp:['💄','رژ لب ملکه','همان رژی که ملکه شب مرگش زده بود.'],rg:['💍','حلقه‌ی ماه خونین','حروف «س» روی آن حک شده؛ نشان همان جامعه‌ای که مُهرش را روی جام کوبیده‌اند.']};
+function add(i,m){S.inv.push(i);SFX.pick();bark();say(m||'برداشتی: '+IT[i][1]);hud();save()}
+function go(r,x){fade=1;S.room=r;P.x=P.tx=x;P.y=P.ty=560;dog.x=x+(x>180?-40:40);dog.y=575;pend=null;hud();save();SFX.step()}
+const ov=h=>{$('#ov').innerHTML=h;$('#ov').style.display='flex'},cl=()=>{$('#ov').style.display='none'};
+const throne=()=>{const m=[];if(!S.f.tst)m.push('آزمایش رژ لب');if(!has('sl'))m.push('برگه‌ی سفارش');m.length?say('تخت خالی ملکه؛ وقتی ادله‌ات کامل شد اینجا حکم می‌دهی. هنوز کم داری: '+m.join('، ')):deduct()};
+const vanity=()=>{if(!has('lp')&&!S.f.lp){S.f.lp=1;add('lp');return}
+ if(S.f.tst)return say('رژ را آزمودی؛ مدرک کامل است. به تخت ملکه در تالار برگرد.');
+ if(has('sp')){S.f.tst=1;rem('sp');SFX.chime();add('rg','قطره‌ی شیره را روی رژ می‌چکانی؛ سرخی به بنفشِ درخشان بدل می‌شود! زهر همین‌جا بوده. پشت آینه حلقه‌ی ماه خونین با حک «س» پیدا کردی.')}
+ else say('رژ لب ملکه را برداشتی. شاید با شیره‌ی گیاهی که در باغ هست بشود آزمایشش کرد.')};
+const dial=()=>S.f.dr?say('ساعت آفتابی روی ۹ مانده و کشو خالی است.'):ov(`<h3>ساعت آفتابی</h3><p>سایه را روی چه ساعتی می‌گذاری؟</p><div class="dg">${[...Array(12)].map((_,i)=>`<button class="b" onclick="dl(${i+1})">${i+1}</button>`).join('')}</div><button class="b2" onclick="cl()">بستن</button>`);
+function dl(n){cl();if(n==9){S.f.dr=1;S.inv.push('sl','kc');SFX.chime();bark();say('ساعت روی ۹ می‌نشیند و کشویی مخفی باز می‌شود: برگه‌ی سفارش و کلید اتاق ملکه!');hud();save()}else{SFX.err();say(S.f.nine?'این ساعت درست نیست.':'ساعت آفتابی تکان نمی‌خورد. ساعت لحظه‌ی نوشیدن جام را در تالار پیدا کن.')}}
+const R_=[
+{n:'تالار تاج‌گذاری',amb:.6,lt:t=>[{x:180,y:70,r:380,a:.92*(.88+.12*Math.sin(t*13))},{x:180,y:330,r:260,a:.5},{x:192,y:130,r:flash>0?420:120,a:flash>0?1:.3}],h:[
+ {x:155,y:415,w:50,h:55,t(){say('جام نقره‌ی ملکه: روی لبه‌اش لکه‌ی سرخ رژ لب است و مُهر ماه خونین؛ اما موم مُهر هنوز نرم است، یعنی بعد از مرگ زده شده. این جام یک طعمه است.')}},
+ {x:20,y:150,w:92,h:170,t(){if(!has('kg')&&!S.f.g)add('kg');else say('ملیله‌ی شکار؛ پشتش دیگر چیزی نیست.')}},
+ {x:245,y:135,w:70,h:70,t(){S.f.nine=1;save();say('ساعت دیواری درست روی ۹ شب ایستاده؛ لحظه‌ی نوشیدن نخستین جام به سلامتی ملکه.')}},
+ {x:140,y:230,w:80,h:160,t:throne},
+ {x:6,y:350,w:56,h:110,d:1,t(){if(S.f.g)go(1,300);else if(has('kg')){S.f.g=1;rem('kg');say('کلید چرخید و باغ شبتاب باز شد.');go(1,300)}else{SFX.err();say('درِ باغ قفل است؛ کلیدش جایی در همین تالار پنهان است.')}}},
+ {x:298,y:352,w:56,h:108,d:1,t(){if(S.f.c)go(2,60);else if(has('kc')){S.f.c=1;rem('kc');say('درِ اتاق خواب ملکه گشوده شد.');go(2,60)}else{SFX.err();say('اتاق خواب ملکه قفل است. کلیدش را باید در باغ جست.')}}}]},
+{n:'باغ شبتاب',amb:.7,lt:t=>[{x:170,y:320,r:230,a:.95*(.85+.15*Math.sin(t*2))},{x:270,y:95,r:320,a:.6}],h:[
+ {x:125,y:265,w:90,h:130,t(){if(!has('sp')&&!S.f.sp){S.f.sp=1;add('sp','شیره‌ی نیلوفر شبتاب را در شیشه‌ی کوچک جمع کردی؛ سمی که فقط شب می‌درخشد.')}else say('نیلوفر شبتاب؛ بیش از این شیره‌ای نمانده.')}},
+ {x:135,y:445,w:90,h:60,t:dial},
+ {x:10,y:320,w:92,h:112,t(){say('ماتیاس باغبان: «من فقط یک سفارش گرفتم: شیره‌ی نیلوفر برای یک رنگ‌آمیزی سلطنتی. برگه‌اش را در ساعت آفتابی گذاشتم؛ ساعتش را باید بدانی.»')}},
+ {x:298,y:352,w:56,h:108,d:1,t(){go(0,60)}}]},
+{n:'اتاق خواب ملکه',amb:.62,lt:t=>[{x:90,y:320,r:240,a:.95*(.85+.15*Math.sin(t*11))},{x:330,y:290,r:240,a:.9*(.85+.15*Math.sin(t*9+2))}],h:[
+ {x:110,y:305,w:140,h:120,t:vanity},
+ {x:235,y:380,w:115,h:110,t(){say('دفتر خاطرات ملکه: «سلین امشب خودش رژ را می‌مالد؛ می‌گوید رنگی آورده که تاج را بدرخشاند. چه ندیمه‌ی مهربانی...»')}},
+ {x:28,y:150,w:80,h:150,t(){say('تصویر ملکه با نشان ماه خونین؛ همان نشانی که روی مُهر لرد ویکتور در پرونده‌ی ۴۰۹ بود.')}},
+ {x:6,y:352,w:56,h:108,d:1,t(){go(0,300)}}]}];
+function hud(){$('#rn').textContent=R_[S.room].n;$('#inv').innerHTML=S.inv.map(i=>`<button class="ib" onclick="say('${IT[i][1]}: ${IT[i][2]}')">${IT[i][0]}</button>`).join('')}
+/* ---------- dynamic effects ---------- */
+function fx(t){const r=S.room;
+ if(r==0){c.save();c.beginPath();c.moveTo(150,200);c.lineTo(150,130);c.arc(180,130,30,Math.PI,0);c.lineTo(210,200);c.closePath();c.clip();for(let i=0;i<22;i++){const x=150+(i*37+t*60)%62,y=100+((i*53+t*420)%110);L(x,y,x-2,y+9,'#9ab4d4aa',1)}c.restore();
+  [[160,62],[180,58],[200,62]].forEach(p=>flame(p[0],p[1],t))}
+ if(r==1){E(170,320,56+5*Math.sin(t*2),56+5*Math.sin(t*2),RG(170,320,60,['#6fe3c188','#0000']));[[150,300,'#7ad9ff'],[190,296,'#b66bff'],[168,330,'#7ad9ff'],[180,356,'#b66bff'],[152,350,'#7ad9ff']].forEach((p,i)=>{E(p[0],p[1],11,11,p[2]);E(p[0],p[1],4+Math.sin(t*3+i),4+Math.sin(t*3+i),'#fff')});
+  for(let i=0;i<14;i++){const x=(i*61+Math.sin(t*.7+i)*30+W)%W,y=360+((i*47)%220)+Math.cos(t*.9+i)*16;c.globalAlpha=.5+.5*Math.sin(t*3+i);E(x,y,2,2,'#e8ff9a');E(x,y,7,7,RG(x,y,7,['#e8ff9a66','#0000']));c.globalAlpha=1}}
+ if(r==2){flame(90,326,t);flame(330,292,t)}}
+/* ---------- loop ---------- */
+const lc=document.createElement('canvas');lc.width=W;lc.height=H;const lx=lc.getContext('2d');let last=0;
+function upd(dt){const dx=P.tx-P.x,dy=P.ty-P.y,d=Math.hypot(dx,dy);P.mv=0;
+ if(d>3){const v=Math.min(d,115*dt);P.x+=dx/d*v;P.y+=dy/d*v;P.mv=1;P.w+=dt*9;if((P.stp-=dt)<0){P.stp=.34;SFX.step()}}else if(pend){const h=pend;pend=null;h.t()}
+ fade=Math.max(0,fade-dt*2);flash-=dt;dog.b=Math.max(0,dog.b-dt);dog.mv=0;
+ const sd=dog.x<P.x?-1:1,tx=clamp(P.x+sd*40,20,340),ty=clamp(P.y+14,415,628),ddx=tx-dog.x,ddy=ty-dog.y,dd=Math.hypot(ddx,ddy);
+ if(dd>7){const v=Math.min(dd,(dd>90?190:125)*dt);dog.x+=ddx/dd*v;dog.y+=ddy/dd*v;dog.mv=1;dog.w+=dt*16;if(Math.abs(ddx)>2)dog.f=ddx>0?1:-1}
+ if(S.room==0&&Math.random()<dt*.12){flash=.45;hap();setTimeout(()=>nz(2,.5,90),350)}}
+function render(t){const r=R_[S.room];g.setTransform(1,0,0,1,0,0);g.fillStyle='#050308';g.fillRect(0,0,cv.width,cv.height);
+ g.setTransform(dpr*k,0,0,dpr*k,ox*dpr,oy*dpr);c=g;g.drawImage(bgOf(S.room),0,0,W,H);fx(t);
+ cur=r.h;cur.forEach((h,i)=>{const cx=h.x+h.w/2,cy=h.y+h.h/2,a=.55+.4*Math.sin(t*3+i);c.globalAlpha=a;if(h.d){c.strokeStyle='#f3d27a';c.lineWidth=2;c.beginPath();c.moveTo(cx-8,cy+4);c.lineTo(cx,cy-6);c.lineTo(cx+8,cy+4);c.stroke()}else{E(cx,cy,14,14,RG(cx,cy,14,['#fff3b0aa','#0000']));PG([[cx,cy-7],[cx+2,cy-2],[cx+7,cy],[cx+2,cy+2],[cx,cy+7],[cx-2,cy+2],[cx-7,cy],[cx-2,cy-2]],'#fff6c8')}c.globalAlpha=1});
+ if(dog.y<P.y){dogDraw(t);me(t)}else{me(t);dogDraw(t)}
+ lx.globalCompositeOperation='source-over';lx.clearRect(0,0,W,H);lx.fillStyle=`rgba(8,4,16,${flash>0&&S.room==0?.2:r.amb})`;lx.fillRect(0,0,W,H);lx.globalCompositeOperation='destination-out';
+ const L2=r.lt(t);L2.forEach(l=>{const q=lx.createRadialGradient(l.x,l.y,0,l.x,l.y,l.r);q.addColorStop(0,`rgba(0,0,0,${l.a})`);q.addColorStop(1,'rgba(0,0,0,0)');lx.fillStyle=q;lx.fillRect(0,0,W,H)});
+ g.drawImage(lc,0,0,W,H);g.globalCompositeOperation='lighter';L2.forEach(l=>{const q=g.createRadialGradient(l.x,l.y,0,l.x,l.y,l.r*.7);q.addColorStop(0,S.room==1?`rgba(90,230,190,${.1*l.a})`:`rgba(255,170,70,${.11*l.a})`);q.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=q;g.fillRect(0,0,W,H)});g.globalCompositeOperation='source-over';
+ if(S.room==0&&flash>0){g.fillStyle=`rgba(220,230,255,${flash*.35})`;g.fillRect(0,0,W,H)}
+ g.setTransform(dpr,0,0,dpr,0,0);const vw=cv.width/dpr,vh=cv.height/dpr,vg=g.createRadialGradient(vw/2,vh/2,0,vw/2,vh/2,Math.max(vw,vh)*.75);vg.addColorStop(.45,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.72)');g.fillStyle=vg;g.fillRect(0,0,vw,vh);
+ if(fade>0){g.fillStyle=`rgba(0,0,0,${fade})`;g.fillRect(0,0,vw,vh)}}
+function loop(ts){const t=ts/1000,dt=Math.min(.05,t-last);last=t;if(started)upd(dt);render(t);requestAnimationFrame(loop)}
+cv.addEventListener('pointerup',e=>{if(!started)return;hap();const x=(e.clientX-ox)/k,y=(e.clientY-oy)/k;
+ const h=[...cur].reverse().find(h=>x>h.x&&x<h.x+h.w&&y>h.y&&y<h.y+h.h);
+ if(h){P.tx=clamp(h.x+h.w/2,24,336);P.ty=clamp(h.y+h.h+16,412,615);pend=h}else{P.tx=clamp(x,24,336);P.ty=clamp(y,412,615);pend=null}});
+/* ---------- deduction & ending ---------- */
+function deduct(){const o=a=>`<option value="">— انتخاب کن —</option>`+a.map(x=>`<option>${x}</option>`).join('');
+ ov(`<h3>حکم نهایی روی تخت ملکه</h3><p>قاتل، شیوه و انگیزه را مشخص کن.</p><select id="k">${o(['ندیمه‌ی ارشد سلین','شاهزاده رودریگو','باغبان ماتیاس'])}</select><select id="m">${o(['زهر روی لبه‌ی جام','شیره‌ی نیلوفر شبتاب در رژ لب ملکه','خنجر پنهان در تاج'])}</select><select id="v">${o(['ارث و تاج','انتقام شخصی','جامعه‌ی ماه خونین'])}</select><button class="b" onclick="verdict()">صدور حکم</button><button class="b2" onclick="cl()">بستن</button>`)}
+function verdict(){if($('#k').value=='ندیمه‌ی ارشد سلین'&&$('#m').value.startsWith('شیره')&&$('#v').value=='جامعه‌ی ماه خونین'){
+ try{const b=rdb();b.c2=1;localStorage.yg_ch=JSON.stringify(b)}catch(e){}SFX.chime();
+ ov(`<h1>بوسه‌ی مرگ رمزگشایی شد</h1><p>ملکه بوسه‌ی آخرش را روی رژی نشاند که سلین با دست خودش بر لبانش کشیده بود. جام و مُهر نرم فقط طعمه بودند، و تو دورشان نزدی.</p><p>درون حلقه‌ی ماه خونین نقشه‌ای ریز حک شده: ورودی آزمایشگاهی در دل جنگل. جایی که ویروسی به نام «لابستر» ساخته می‌شود...</p><p><b style="color:#f3d27a">فصل سوم باز شد.</b></p><button class="b" onclick="location.href='index.html'">بازگشت به فهرست پرونده‌ها</button>`)}
+ else{SFX.err();say('استنتاجت هنوز با ادله جور درنمی‌آید؛ جام، رژ، دفتر خاطرات و برگه‌ی سفارش را دوباره بسنج.');cl()}}
+function start(){cl();S.f.intro=1;started=true;save();say('برای راه‌رفتن ضربه بزن. روی نقطه‌های درخشان ضربه بزن تا بررسی‌شان کنی؛ از درهای کمانی به اتاق‌های دیگر برو. هاپو همراه توست!')}
+rs();addEventListener('resize',rs);hud();requestAnimationFrame(loop);
+if(S.f.intro)started=true;else ov(`<h1>فصل دوم<br>بوسه‌ی مرگ</h1><p>شب جشن تاج‌گذاری. ملکه‌ی ایزابل لبه‌ی جام نقره را می‌بوسد و پیش چشم همه می‌میرد.<br>روی جام، همان مُهر ماه خونین است که در پرونده‌ی ۴۰۹ پیدا کردی.<br><b style="color:#f3d27a">لباس سلطنتی بپوش، دوشیزه یگانه؛ قصر ملکه منتظر توست.</b></p><button class="b" onclick="start()">ورود به قصر</button>`);
+</script></body></html>

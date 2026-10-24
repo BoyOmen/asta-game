@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<title>فصل سوم — ویروس لابستر</title>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#03070a;overflow:hidden;color:#d8f3e8;font-family:Vazirmatn,Tahoma,sans-serif;user-select:none;touch-action:manipulation;overscroll-behavior:none}
+canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none}
+#hud{position:fixed;top:calc(8px + env(safe-area-inset-top));left:8px;right:8px;display:flex;gap:6px;align-items:center;pointer-events:none}
+#hud>*{pointer-events:auto}
+#rn{flex:1;font-size:12px;background:#000a;border:1px solid #6fe3c166;border-radius:8px;padding:4px 9px}
+.ib{font-size:20px;background:#0a1418dd;border:1px solid #6fe3c1;border-radius:10px;width:38px;height:38px;color:#fff}
+#say{position:fixed;left:10px;right:10px;bottom:calc(12px + env(safe-area-inset-bottom));max-width:540px;margin:auto;background:#081216f0;border:1px solid #6fe3c1;border-radius:12px;padding:10px 14px;font-size:13px;line-height:1.9;opacity:0;transition:.3s;pointer-events:none}
+#say.on{opacity:1}
+#ov{position:fixed;inset:0;background:#03070aee;display:none;flex-direction:column;align-items:center;padding:18px;z-index:9;text-align:center;overflow:auto}
+#ov>*{margin-block:auto;max-width:420px}
+#ov h1{font-size:28px;font-weight:900;color:#6fe3c1;line-height:1.6;text-shadow:0 0 18px #6fe3c177}
+#ov h3{color:#6fe3c1;margin-bottom:8px}#ov p{line-height:2.1;font-size:14.5px;margin:10px 0}
+.b,.b2,select{font:inherit;color:#d8f3e8;background:linear-gradient(#14684f,#093a2c);border:1px solid #6fe3c1;border-radius:10px;padding:9px 18px;margin:5px;font-size:15px}
+.b2{background:#1a2226;border-color:#4a5a5a;font-size:13px}select{display:block;width:100%;background:#0c1a1e}
+.dg{display:flex;direction:ltr;gap:14px;justify-content:center;margin:14px}.dg div{display:flex;flex-direction:column;align-items:center}.dg b{font-size:34px;color:#6fe3c1;width:56px;padding:4px;margin:4px;background:#000;border:2px solid #4a6a6a;border-radius:8px}
+.sq{min-height:44px;border:1px dashed #6fe3c1aa;border-radius:10px;padding:8px;margin:10px 0;font-size:13px;line-height:2}
+</style></head><body>
+<canvas id="cv"></canvas>
+<div id="hud"><button class="ib" onclick="location.href='index.html'" aria-label="فهرست">☰</button><span id="rn"></span><span id="inv" style="display:flex;gap:6px"></span></div>
+<div id="say"></div><div id="ov"></div>
+<script>
+"use strict";
+if(!CanvasRenderingContext2D.prototype.roundRect)CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){r=Math.min(r||0,w/2,h/2);this.moveTo(x+r,y);this.arcTo(x+w,y,x+w,y+h,r);this.arcTo(x+w,y+h,x,y+h,r);this.arcTo(x,y+h,x,y,r);this.arcTo(x,y,x+w,y,r);this.closePath()};
+const $=s=>document.querySelector(s),W=360,H=640,cv=$('#cv'),g=cv.getContext('2d'),dpr=Math.min(devicePixelRatio||1,2);
+const tg=window.Telegram&&Telegram.WebApp;try{tg.ready()}catch(e){}try{tg.expand()}catch(e){}try{tg.disableVerticalSwipes()}catch(e){}
+const hap=t=>{try{tg.HapticFeedback.impactOccurred(t||'light')}catch(e){}};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+let c=g,k=1,ox=0,oy=0;
+function rs(){cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;k=Math.min(innerWidth/W,innerHeight/H);ox=(innerWidth-W*k)/2;oy=(innerHeight-H*k)/2}
+/* ---------- save ---------- */
+const rdb=()=>{try{return JSON.parse(localStorage.yg_ch)||{}}catch(e){return{}}};
+let S={room:0,inv:[],f:{}};Object.assign(S,rdb().s3||{});
+const save=()=>{try{const b=rdb();b.s3=S;localStorage.yg_ch=JSON.stringify(b)}catch(e){}};
+const has=i=>S.inv.includes(i),rem=i=>{S.inv=S.inv.filter(x=>x!==i)};
+/* ---------- audio ---------- */
+let A;const au=()=>A||(A=new(window.AudioContext||window.webkitAudioContext)());
+function tn(f,d,v=.08,ty='sine',f2){try{const a=au(),T=a.currentTime,o=a.createOscillator(),n=a.createGain();o.type=ty;o.frequency.setValueAtTime(f,T);if(f2)o.frequency.exponentialRampToValueAtTime(f2,T+d);n.gain.setValueAtTime(v,T);n.gain.exponentialRampToValueAtTime(.0001,T+d);o.connect(n);n.connect(a.destination);o.start(T);o.stop(T+d)}catch(e){}}
+function nb(d,loop){const a=au(),n=a.sampleRate*d|0,b=a.createBuffer(1,n,a.sampleRate),x=b.getChannelData(0);for(let i=0;i<n;i++)x[i]=Math.random()*2-1;const s=a.createBufferSource();s.buffer=b;s.loop=!!loop;return s}
+function nz(d,v,fr){try{const a=au(),s=nb(d),f=a.createBiquadFilter(),n=a.createGain();f.type='bandpass';f.frequency.value=fr;n.gain.setValueAtTime(v,a.currentTime);n.gain.exponentialRampToValueAtTime(.0001,a.currentTime+d);s.connect(f);f.connect(n);n.connect(a.destination);s.start()}catch(e){}}
+function windLoop(){try{const a=au(),s=nb(3,1),f=a.createBiquadFilter(),n=a.createGain();f.type='lowpass';f.frequency.value=420;n.gain.value=.05;s.connect(f);f.connect(n);n.connect(a.destination);s.start();const o=a.createOscillator(),og=a.createGain();o.frequency.value=55;og.gain.value=.025;o.connect(og);og.connect(a.destination);o.start()}catch(e){}}
+const SFX={step:()=>nz(.08,.18,180),chime:()=>[523,659,784,1047].forEach((f,i)=>setTimeout(()=>tn(f,1.2,.07),i*130)),err:()=>tn(150,.3,.12,'sine',80),pick:()=>{tn(2400,.3,.06);tn(3600,.2,.04)},bark:()=>{tn(520,.15,.1,'sawtooth',250);nz(.07,.15,2500)},beep:()=>tn(1400,.06,.05,'square')};
+addEventListener('pointerdown',()=>{try{au().resume()}catch(e){}if(!rs.r){rs.r=1;windLoop()}},{once:true});
+/* ---------- draw helpers (global ctx c) ---------- */
+const LG=(x0,y0,x1,y1,st)=>{const q=c.createLinearGradient(x0,y0,x1,y1);st.forEach((s,i)=>q.addColorStop(i/(st.length-1),s));return q};
+const RG=(x,y,r,st)=>{const q=c.createRadialGradient(x,y,0,x,y,r);st.forEach((s,i)=>q.addColorStop(i/(st.length-1),s));return q};
+const R=(x,y,w,h,f,r=0)=>{c.fillStyle=f;c.beginPath();c.roundRect(x,y,w,h,r);c.fill()};
+const E=(x,y,rx,ry,f,rot=0)=>{c.fillStyle=f;c.beginPath();c.ellipse(x,y,rx,ry,rot,0,7);c.fill()};
+const PG=(p,f)=>{c.fillStyle=f;c.beginPath();p.forEach((q,i)=>i?c.lineTo(q[0],q[1]):c.moveTo(q[0],q[1]));c.closePath();c.fill()};
+const L=(x0,y0,x1,y1,col,w=1)=>{c.strokeStyle=col;c.lineWidth=w;c.beginPath();c.moveTo(x0,y0);c.lineTo(x1,y1);c.stroke()};
+const TX=(s,x,y,sz,col)=>{c.font=`700 ${sz}px Vazirmatn,Tahoma`;c.direction='rtl';c.textAlign='center';c.fillStyle=col;c.fillText(s,x,y)};
+const MT=(a,b)=>LG(a,0,b,0,['#3a4046','#c8d0d6','#3a4046']);
+function floor(a,b){R(0,400,W,240,LG(0,400,0,640,[a,b]));for(let i=0;i<=10;i++){const x=30+i*30;L(x,400,180+(x-180)*2.6,640,'#0007',1.2)}for(let j=1;j<8;j++){const y=400+Math.pow(j/7,1.7)*240;L(0,y,W,y,'#0007',1.2)}}
+function door(x,col){c.fillStyle=LG(0,380,0,460,['#020304','#10161a']);c.beginPath();c.moveTo(x,460);c.lineTo(x,380);c.arc(x+28,380,28,Math.PI,0);c.lineTo(x+56,460);c.closePath();c.fill();c.strokeStyle=col;c.lineWidth=4;c.stroke();E(x+44,425,3,3,col)}
+/* ---------- static art ---------- */
+const ART=[
+()=>{R(0,0,W,H,'#03080c');R(0,0,W,420,LG(0,0,0,420,['#04101a','#0c2a2a','#0a1e1a']));
+ E(80,90,24,24,'#e8fff6');E(80,90,90,90,RG(80,90,90,['#6fe3c155','#0000']));
+ for(let i=0;i<9;i++){const x=i*46-6;PG([[x,420],[x+22,140+(i*37)%60],[x+44,420]],'#061a14')}
+ for(let i=0;i<6;i++){const x=20+i*66+(i%2)*10,y=160+(i*29)%50;R(x,y,14,260,LG(x,0,x+14,0,['#0a0e0a','#2a2418','#0a0e0a']));E(x+7,y-8,40,72,'#082a1e');E(x-8,y+30,22,40,'#0a3424')}
+ PG([[206,420],[220,230],[300,186],[352,232],[360,420]],LG(0,186,0,420,['#3e4248','#14161a']));
+ R(240,280,90,130,LG(0,280,0,410,['#4e5258','#22252a']),4);c.strokeStyle='#8a9096';c.lineWidth=4;c.beginPath();c.roundRect(240,280,90,130,4);c.stroke();L(285,280,285,410,'#0008',3);E(285,346,16,16,'#16090e');c.strokeStyle='#c0183a';c.lineWidth=3;c.beginPath();c.arc(285,346,16,0,7);c.stroke();c.beginPath();c.arc(290,346,12,-1.2,1.2);c.stroke();
+ R(0,400,W,240,LG(0,400,0,640,['#0c1e14','#030804']));for(let i=0;i<12;i++)E(20+i*31,420+(i*53)%200,18,6,'#0e2a1a');
+ R(130,426,64,40,LG(0,426,0,466,['#6a6e74','#3a3e44']),4);E(162,426,32,10,'#8a8e94');E(162,425,11,5,'#16090e');
+ R(20,446,94,34,LG(0,446,0,480,['#4a3420','#1e140c']),15);E(26,463,10,17,'#7a5a3a');E(26,463,5,9,'#4a3420');
+ R(36,198,44,58,'#e8dcb4',2);for(let i=0;i<5;i++)L(42,208+i*9,74,208+i*9,'#5a4a2a99',1.5);E(58,198,3,3,'#8a1d1d')},
+()=>{R(0,0,W,H,'#07090c');R(0,60,W,340,LG(0,60,0,400,['#2c3036','#14171b']));
+ for(let y=70;y<400;y+=34)L(0,y,W,y,'#0006');for(let x=0;x<W;x+=60)L(x,60,x,400,'#0004');
+ R(0,92,W,12,MT(0,W));R(0,112,W,6,MT(0,W));
+ R(110,148,152,104,'#050608',5);R(116,154,70,44,LG(0,154,0,198,['#0c4a48','#06221f']));R(190,154,66,44,LG(0,154,0,198,['#4a0a18','#220610']));R(116,202,140,44,'#06121c');for(let i=0;i<6;i++)L(122,210+i*6,122+((i*37)%110),210+i*6,'#6fe3c188',2);
+ R(30,148,78,134,'#e8ecf0',3);c.strokeStyle='#5a6068';c.lineWidth=3;c.beginPath();c.roundRect(30,148,78,134,3);c.stroke();for(let i=0;i<5;i++)L(38,166+i*18,38+30+((i*17)%34),166+i*18,'#2a4a8a',2);TX('نمونه صفر',69,160,10,'#a31630');TX('۹:۴۰',69,274,12,'#a31630');
+ floor('#2a2c30','#0a0b0d');
+ R(140,342,140,14,LG(0,342,0,356,['#8a8e94','#4a4e54']),4);R(148,356,124,64,'#2a2e34');R(150,360,60,26,'#1c2024');R(212,360,58,26,'#1c2024');R(172,366,16,12,'#0a0c10');for(let i=0;i<3;i++)E(176+i*5,372,1.4,1.4,'#ff4a5a');R(190,330,28,12,'#d8dde2');
+ door(6,'#6fe3c1');door(298,'#ff4a5a');R(330,350,18,28,'#10161a',3);E(339,360,4,4,'#ff4a5a')},
+()=>{R(0,0,W,H,'#050a0d');R(0,60,W,340,LG(0,60,0,400,['#0e1c24','#0a1216']));for(let y=70;y<400;y+=34)L(0,y,W,y,'#0006');
+ R(116,186,128,214,MT(116,244),12);R(124,194,112,198,LG(0,194,0,392,['#1a8a8a66','#0a3e4ccc']),8);L(124,236,236,236,'#ffffff22',2);R(116,186,128,12,MT(116,244),6);
+ R(24,214,88,8,MT(24,112));R(24,276,88,8,MT(24,112));[['#6fe3c1',34],['#b66bff',52],['#ff8a3a',70],['#e0245e',88]].forEach(([col,x],i)=>{R(x,190,12,24,col+'aa',4);R(x,252,12,24,col+'88',4)});
+ R(22,298,92,102,'#d8dde2',3);for(let i=0;i<6;i++)L(30,312+i*13,30+30+((i*23)%48),312+i*13,'#3a5a7a',2);TX('گام ۳',68,306,10,'#a31630');
+ R(246,208,96,100,'#0a2a38aa',6);c.strokeStyle='#6fe3c1';c.lineWidth=2;c.beginPath();c.roundRect(246,208,96,100,6);c.stroke();
+ floor('#1c2024','#06080a');
+ R(244,348,102,74,LG(0,348,0,422,['#2c3840','#10181c']),6);R(252,354,86,34,'#0a3a30');for(let i=0;i<4;i++)R(256+i*20,396,14,10,['#6fe3c1','#ff4a5a','#f3d27a','#6fe3c1'][i]+'bb',3);
+ for(let i=0;i<14;i++)PG([[i*28,640],[i*28+14,640],[i*28+28,626],[i*28+14,626]],'#e8c02a55');door(6,'#6fe3c1')}];
+const bgc=[];function bgOf(r){if(!bgc[r]){const o=document.createElement('canvas');o.width=W*2;o.height=H*2;const x=o.getContext('2d');x.scale(2,2);c=x;ART[r]();c=g;bgc[r]=o}return bgc[r]}
+/* ---------- state & characters ---------- */
+let P={x:180,y:560,tx:180,ty:560,w:0,mv:0,stp:0},pend=null,fade=1,started=false,cur=[];
+const dog={x:140,y:575,f:1,w:0,mv:0,b:0};
+function bark(){dog.b=.5;dog.f=P.x>dog.x?1:-1;SFX.bark();hap('medium')}
+function say(t){const e=$('#say');e.textContent=t;e.classList.add('on');clearTimeout(say.t);say.t=setTimeout(()=>e.classList.remove('on'),9000)}
+function me(t){const s=.5+(P.y-412)/203*.6,w=Math.sin(P.w)*P.mv,bob=Math.abs(Math.cos(P.w))*2*P.mv+Math.sin(t*2)*1.2,hr=LG(-16,-124,16,-60,['#2a1a30','#0d0810']),co=LG(-26,0,26,0,['#2e3a1e','#5a6a3a','#2e3a1e']);
+ c.save();c.translate(P.x,P.y);c.scale(s,s);E(0,0,26,6,'#0006');
+ for(const kk of[-1,1]){c.save();c.translate(kk*6,-30-bob);c.rotate(w*kk*.5);R(-4,0,8,26,'#1a1a14',3);R(-6,20,12,12,'#120c06',4);c.restore()}
+ c.translate(0,-bob);R(-18,-124,36,70,hr,16);PG([[-16,-92],[16,-92],[28,-26],[-28,-26]],co);L(0,-92,0,-26,'#1a2410',2);R(-17,-66,34,6,'#2a2210');E(0,-63,3,3,'#6fe3c1');L(-16,-92,-10,-70,'#6fe3c1aa',1.5);L(16,-92,10,-70,'#6fe3c1aa',1.5);PG([[-8,-94],[0,-84],[8,-94],[4,-96],[0,-90],[-4,-96]],'#1e2a12');
+ for(const kk of[-1,1]){c.save();c.translate(kk*17,-88);c.rotate(w*kk*.4);R(-4.5,0,9,30,co,4);R(-5,24,10,5,'#2a2210',2);E(0,32,3.6,3.6,'#f1cfb0');c.restore()}
+ R(-3,-100,6,9,'#e8b896');E(0,-110,13,15,LG(-13,-125,13,-95,['#ffe6d0','#f0c2a2']));
+ c.fillStyle=hr;c.beginPath();c.moveTo(-14,-110);c.quadraticCurveTo(-16,-132,0,-132);c.quadraticCurveTo(16,-132,14,-110);c.quadraticCurveTo(10,-118,6,-112);c.quadraticCurveTo(2,-120,-2,-112);c.quadraticCurveTo(-6,-119,-10,-112);c.quadraticCurveTo(-13,-117,-14,-110);c.fill();
+ for(const kk of[-1,1]){E(kk*6,-108,4.6,5.4,'#fff');E(kk*6,-107.5,3.5,4.2,LG(0,-112,0,-103,['#1f5a4a','#7a4a22','#d4923a']));E(kk*6,-107.3,1.8,2.3,'#0a0508');E(kk*6-1.3,-109,1.2,1.2,'#fff');L(kk*10.5,-116,kk*3,-117.5,'#1a0e14',1.2)}
+ E(-8.5,-102,3,1.8,'#e6647844');E(8.5,-102,3,1.8,'#e6647844');c.strokeStyle='#b0485a';c.lineWidth=1.3;c.beginPath();c.arc(0,-102,3,.25,Math.PI-.25);c.stroke();
+ R(-16,-130,32,8,'#12302a',4);c.strokeStyle='#6fe3c1';c.lineWidth=1.5;c.beginPath();c.roundRect(-16,-130,32,8,4);c.stroke();E(-7,-126,3.4,3.4,'#6fe3c1');E(7,-126,3.4,3.4,'#6fe3c1');E(-7,-126,8,8,RG(-7,-126,8,['#6fe3c166','#0000']));E(7,-126,8,8,RG(7,-126,8,['#6fe3c166','#0000']));
+ c.restore()}
+function dogDraw(t){const s=.38+(dog.y-412)/203*.5;c.save();c.translate(dog.x,dog.y);c.scale(s*dog.f,s);E(0,0,24,5,'#0006');
+ c.save();c.translate(-19,-26);c.rotate(-.9+Math.sin(t*(dog.mv?16:9))*.45);R(-2.5,-17,5,19,'#e8741a',3);R(-2.5,-19,5,6,'#fff3e0',3);c.restore();
+ [[-13,0],[-8,Math.PI],[9,Math.PI],[14,0]].forEach(([x,p])=>{c.save();c.translate(x,-15);c.rotate(Math.sin(dog.w+p)*.75*dog.mv);R(-2.8,0,5.6,15,'#d96a14',2);E(0,15,4,2.2,'#fff3e0');c.restore()});
+ E(0,-24,22,11.5,LG(0,-36,0,-12,['#ffa24a','#f07a1c','#c9600e']));E(9,-19,10,7,'#fff3e0');R(14,-35,5,13,'#c31e3a',2);
+ c.save();c.translate(19,-33-(dog.b>0?3:0));E(0,0,10.5,9.5,'#f08a2a');E(9,3.5,8,5.5,'#fff0dc');if(dog.b>0)E(10,7,6,3,'#3a0a10');E(15,1,2.8,2.2,'#1a0e0a');E(-4,-2,4.5,9,'#b54e0a',.35);E(3,-2.5,2,2.4,'#1a0e0a');c.restore();c.restore();
+ if(dog.b>0){R(dog.x-24,dog.y-72*s-14,48,22,'#fff5e0',8);TX('هاپ!',dog.x,dog.y-72*s+2,13,'#b3480a')}}
+/* ---------- items & puzzles ---------- */
+const IT={cd:['💳','کارت دسترسی','کارت مغناطیسی خیس با نشان ماه خونین؛ برای درِ آزمایشگاه است.'],p1:['📄','صفحه‌ی ۱ دفترچه','«هر سم به یک حامل نیاز دارد، چیزی که از لب‌ها وارد تن می‌شود. حاملِ ما شیره‌ی نیلوفر شبتاب است. اولین گام همیشه حامل است.»'],p2:['📄','صفحه‌ی ۲ دفترچه','«حامل به‌تنهایی نمی‌کشد. فعال‌ساز لازم است: عصاره‌ی پوسته‌ی خرچنگ سرخ. فقط بعد از حامل، هرگز قبل از آن.»'],p3:['📄','صفحه‌ی ۳ دفترچه','«آخرین گام: پایدارکننده. نمک غار تا اثر در تن ثابت شود. هیچ گامی جابه‌جا نشود، وگرنه ماده بی‌اثر می‌شود.»']};
+function add(i,m){S.inv.push(i);SFX.pick();bark();say(m||'برداشتی: '+IT[i][1]);hud();save()}
+function go(r,x){fade=1;S.room=r;P.x=P.tx=x;P.y=P.ty=560;dog.x=x+(x>180?-40:40);dog.y=575;pend=null;hud();save();SFX.step()}
+const ov=h=>{$('#ov').innerHTML=h;$('#ov').style.display='flex'},cl=()=>{$('#ov').style.display='none'};
+let D=[0,0,0];
+function keypad(){if(S.f.dw)return say('کشو خالی است؛ هر دو صفحه‌ی دفترچه را برداشته‌ای.');D=[0,0,0];ov(`<h3>قفل رمزی کشو</h3><p>رمز سه‌رقمی را وارد کن</p><div class="dg">${[0,1,2].map(i=>`<div><button class="b" onclick="dl(${i},1)">▲</button><b id="d${i}">0</b><button class="b" onclick="dl(${i},-1)">▼</button></div>`).join('')}</div><button class="b" onclick="ck()">باز کن</button><button class="b2" onclick="cl()">بستن</button>`)}
+function dl(i,v){D[i]=(D[i]+v+10)%10;$('#d'+i).textContent=D[i];SFX.beep();hap()}
+function ck(){if(D.join('')=='940'){S.f.dw=1;cl();SFX.chime();add('p2','قفل باز شد: صفحه‌ی ۲ دفترچه درون کشو بود.')}else{SFX.err();say('رمز نادرست است. عدد را از روی تخته‌ی سفید و ساعت مرگ نمونه‌ی صفر پیدا کن.')}}
+const NM=['عصاره‌ی پوسته‌ی خرچنگ سرخ','نمک غار','شیره‌ی نیلوفر شبتاب'],ORD=[2,0,1];let SQ=[];
+function synth(){if(S.f.syn)return say('فرمول بازسازی شد: حامل، فعال‌ساز، پایدارکننده.');
+ if(!(has('p1')&&has('p2')&&has('p3')))return say('هنوز ترتیب مراحل را نمی‌دانی؛ هر سه صفحه‌ی دفترچه را پیدا کن.');SQ=[];sq()}
+function sq(){ov(`<h3>کنسول بازسازی سنتز</h3><p>مواد را به همان ترتیبی که در دفترچه آمده انتخاب کن.</p><div class="sq">${SQ.length?SQ.map((n,i)=>(i+1)+'. '+NM[n]).join('<br>'):'ترتیب انتخاب‌شده اینجا نمایش داده می‌شود'}</div>${ORD.filter(n=>!SQ.includes(n)).map(n=>`<button class="b" style="display:block;width:100%" onclick="pk(${n})">${NM[n]}</button>`).join('')}<button class="b2" onclick="SQ=[];sq()">پاک‌کردن</button><button class="b2" onclick="cl()">بستن</button>`)}
+function pk(n){SQ.push(n);SFX.beep();if(SQ.length<3)return sq();
+ if(SQ.join()=='2,1,0'){S.f.syn=1;cl();SFX.chime();bark();say('شبیه‌سازی کامل شد: ویروس لابستر با «حامل، فعال‌ساز، پایدارکننده» ساخته شده؛ و بوسه‌ی مرگ فقط نمونه‌ی صفر بود. نمایشگر سمت راست باز شد.');hud();save()}
+ else{SFX.err();say('واکنش ناپایدار شد! ترتیب با دفترچه نمی‌خواند.');SQ=[];cl()}}
+function holo(){if(!S.f.syn)return say('نمایشگر قفل است؛ ابتدا فرمول را از روی کنسول بازسازی کن.');
+ if(!S.f.mon)return say('پرونده ناقص است: کسی که دستور ساخت داده در دوربین‌های اتاق کنترل ردی گذاشته؛ آن‌جا را دوباره ببین.');deduct()}
+const R_=[
+{n:'جنگل مه‌آلود',amb:.66,lt:t=>[{x:80,y:90,r:360,a:.7},{x:285,y:346,r:160,a:.5*(.7+.3*Math.sin(t*3))},{x:162,y:430,r:120,a:.4}],h:[
+ {x:20,y:440,w:94,h:48,t(){if(!has('cd')&&!S.f.lab)add('cd');else say('کنده‌ی نیمه‌پوسیده؛ چیز دیگری زیرش نیست.')}},
+ {x:30,y:195,w:60,h:70,t(){if(!has('p1')&&!S.f.p1){S.f.p1=1;add('p1')}else say('میخی که صفحه‌ی دفترچه را نگه داشته بود هنوز در تنه‌ی درخت است.')}},
+ {x:122,y:420,w:80,h:60,t(){if(S.f.open)return say('تخته‌سنگ ماه‌شکل خالی است؛ دروازه باز شده.');S.f.open=1;save();SFX.chime();bark();say('حلقه‌ی ماه خونین را که از قصر ملکه آورده‌ای در شیار می‌گذاری؛ می‌چرخد و دروازه‌ی بتنی کنار می‌رود.')}},
+ {x:240,y:280,w:90,h:130,d:1,t(){if(S.f.open)go(1,60);else{SFX.err();say('دروازه‌ی بتنی بسته است؛ روی تخته‌سنگ کنارش یک شیار ماه‌شکل می‌بینی.')}}}]},
+{n:'اتاق کنترل زیرزمین',amb:.58,lt:t=>[{x:180,y:110,r:300,a:.85*(.82+.18*Math.sin(t*17)*Math.sin(t*5.3))},{x:185,y:200,r:170,a:.7},{x:190,y:360,r:140,a:.4}],h:[
+ {x:110,y:148,w:152,h:104,t(){S.f.mon=1;save();say('ضبط دوربین: مردی در تاریکی ظرف سرخی را تحویل می‌گیرد. چهره‌اش دیده نمی‌شود، فقط سردوشی طلاباف نگهبانان قصر روی شانه‌اش برق می‌زند.')}},
+ {x:30,y:148,w:78,h:134,t(){say('تخته‌ی سفید: «نمونه‌ی صفر: ملکه‌ی ایزابل، ساعت ۹ و ۴۰ دقیقه‌ی شب». زیرش با خودکار قرمز نوشته‌اند: «رمز کشو = همین ساعت».')}},
+ {x:140,y:330,w:140,h:90,t:keypad},
+ {x:6,y:352,w:56,h:108,d:1,t(){go(0,280)}},
+ {x:298,y:352,w:56,h:108,d:1,t(){if(S.f.lab)go(2,60);else if(has('cd')){S.f.lab=1;rem('cd');SFX.chime();say('کارت را می‌کشی؛ چراغ قرمز سبز می‌شود و درِ آزمایشگاه باز می‌شود.');go(2,60)}else{SFX.err();say('درِ آزمایشگاه کارت‌خوان دارد. کارت دسترسی را بیرون، در جنگل، جست‌وجو کن.')}}}]},
+{n:'آزمایشگاه سنتز',amb:.6,lt:t=>[{x:180,y:300,r:270,a:.95*(.85+.15*Math.sin(t*2))},{x:60,y:80,r:220,a:.5*(.5+.5*Math.sin(t*4))},{x:295,y:260,r:150,a:.7}],h:[
+ {x:116,y:186,w:128,h:214,t(){say('مخزن بزرگ: خرچنگ‌های سرخ‌رنگ در مایع سبزفام شناورند. ژنشان همان ماده‌ای است که ویروس را «لابستر» نامیده.')}},
+ {x:22,y:298,w:92,h:102,t(){if(!has('p3')&&!S.f.p3){S.f.p3=1;add('p3')}else say('تخته‌ی یادداشت؛ صفحه‌ی آخر دفترچه را برداشته‌ای.')}},
+ {x:244,y:348,w:102,h:74,t:synth},
+ {x:246,y:208,w:96,h:100,t:holo},
+ {x:6,y:352,w:56,h:108,d:1,t(){go(1,300)}}]}];
+function hud(){$('#rn').textContent=R_[S.room].n;$('#inv').innerHTML=S.inv.map(i=>`<button class="ib" onclick="say('${IT[i][1]}: ${IT[i][2]}')">${IT[i][0]}</button>`).join('')}
+/* ---------- dynamic effects ---------- */
+function fx(t){const r=S.room;
+ if(r==0){for(let i=0;i<5;i++){const x=((t*14+i*95)%520)-80,y=380+i*46;E(x,y,120,18,RG(x,y,120,['#aee8d822','#0000']))}
+  for(let i=0;i<16;i++){const x=(i*57+Math.sin(t*.6+i)*34+W)%W,y=330+((i*43)%220)+Math.cos(t*.8+i)*18;c.globalAlpha=.5+.5*Math.sin(t*3+i);E(x,y,2,2,'#e8ff9a');E(x,y,8,8,RG(x,y,8,['#e8ff9a66','#0000']));c.globalAlpha=1}
+  c.globalAlpha=.6+.3*Math.sin(t*3);E(285,346,22,22,RG(285,346,22,['#ff3a5a88','#0000']));c.globalAlpha=1}
+ if(r==1){c.globalAlpha=.6+.4*Math.sin(t*5);E(339,360,4,4,'#ff4a5a');E(176,372,3,3,'#ff4a5a');c.globalAlpha=1;R(116,154,70,44,'#6fe3c11a');for(let i=0;i<4;i++)R(122+((t*40+i*30)%58),156,6,40,'#6fe3c122')}
+ if(r==2){c.save();c.beginPath();c.roundRect(124,194,112,198,8);c.clip();
+  for(let i=0;i<14;i++){const x=134+(i*29)%92,y=392-((i*47+t*50)%196);E(x,y,2+i%3,2+i%3,'#bff8ff55')}
+  [0,1,2].forEach(i=>{const x=180+Math.sin(t*.7+i*2.1)*34,y=290+i*30+Math.cos(t*.9+i)*10,f=Math.sin(t*.7+i*2.1)>0?1:-1;c.save();c.translate(x,y);c.scale(f,1);E(0,0,14,7,'#d8283e');E(-14,0,7,5,'#b01c32');PG([[12,-2],[26,-8],[24,0],[26,8],[12,2]],'#b01c32');L(6,-6,16,-14,'#e0485a',2);E(8,-15,4,3,'#d8283e');L(6,6,16,14,'#e0485a',2);E(8,15,4,3,'#d8283e');E(5,-3,1.6,1.6,'#fff');c.restore()});c.restore();
+  R(252,354,86,34,'#6fe3c133');for(let i=0;i<5;i++)L(258,360+i*6,258+((t*30+i*17)%70),360+i*6,'#6fe3c1',2);
+  E(295,258,40,40,RG(295,258,40,['#6fe3c133','#0000']));TX(S.f.syn?'ماه خونین':'قفل',295,262,13,'#6fe3c1');
+  c.globalAlpha=.25*(.5+.5*Math.sin(t*4));R(0,0,W,H,'#ff2a3a');c.globalAlpha=1}}
+/* ---------- loop ---------- */
+const lc=document.createElement('canvas');lc.width=W;lc.height=H;const lx=lc.getContext('2d');let last=0;
+function upd(dt){const dx=P.tx-P.x,dy=P.ty-P.y,d=Math.hypot(dx,dy);P.mv=0;
+ if(d>3){const v=Math.min(d,115*dt);P.x+=dx/d*v;P.y+=dy/d*v;P.mv=1;P.w+=dt*9;if((P.stp-=dt)<0){P.stp=.34;SFX.step()}}else if(pend){const h=pend;pend=null;h.t()}
+ fade=Math.max(0,fade-dt*2);dog.b=Math.max(0,dog.b-dt);dog.mv=0;
+ const sd=dog.x<P.x?-1:1,tx=clamp(P.x+sd*40,20,340),ty=clamp(P.y+14,415,628),ddx=tx-dog.x,ddy=ty-dog.y,dd=Math.hypot(ddx,ddy);
+ if(dd>7){const v=Math.min(dd,(dd>90?190:125)*dt);dog.x+=ddx/dd*v;dog.y+=ddy/dd*v;dog.mv=1;dog.w+=dt*16;if(Math.abs(ddx)>2)dog.f=ddx>0?1:-1}}
+function render(t){const r=R_[S.room];g.setTransform(1,0,0,1,0,0);g.fillStyle='#03070a';g.fillRect(0,0,cv.width,cv.height);
+ g.setTransform(dpr*k,0,0,dpr*k,ox*dpr,oy*dpr);c=g;g.drawImage(bgOf(S.room),0,0,W,H);fx(t);
+ cur=r.h;cur.forEach((h,i)=>{const cx=h.x+h.w/2,cy=h.y+h.h/2;c.globalAlpha=.55+.4*Math.sin(t*3+i);if(h.d){c.strokeStyle='#6fe3c1';c.lineWidth=2;c.beginPath();c.moveTo(cx-8,cy+4);c.lineTo(cx,cy-6);c.lineTo(cx+8,cy+4);c.stroke()}else{E(cx,cy,14,14,RG(cx,cy,14,['#b8fff0aa','#0000']));PG([[cx,cy-7],[cx+2,cy-2],[cx+7,cy],[cx+2,cy+2],[cx,cy+7],[cx-2,cy+2],[cx-7,cy],[cx-2,cy-2]],'#e8fff8')}c.globalAlpha=1});
+ if(dog.y<P.y){dogDraw(t);me(t)}else{me(t);dogDraw(t)}
+ lx.globalCompositeOperation='source-over';lx.clearRect(0,0,W,H);lx.fillStyle=`rgba(4,8,14,${r.amb})`;lx.fillRect(0,0,W,H);lx.globalCompositeOperation='destination-out';
+ const L2=r.lt(t);L2.forEach(l=>{const q=lx.createRadialGradient(l.x,l.y,0,l.x,l.y,l.r);q.addColorStop(0,`rgba(0,0,0,${l.a})`);q.addColorStop(1,'rgba(0,0,0,0)');lx.fillStyle=q;lx.fillRect(0,0,W,H)});
+ g.drawImage(lc,0,0,W,H);g.globalCompositeOperation='lighter';L2.forEach(l=>{const q=g.createRadialGradient(l.x,l.y,0,l.x,l.y,l.r*.7);q.addColorStop(0,S.room==1?`rgba(150,190,255,${.09*l.a})`:`rgba(90,230,190,${.1*l.a})`);q.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=q;g.fillRect(0,0,W,H)});g.globalCompositeOperation='source-over';
+ g.setTransform(dpr,0,0,dpr,0,0);const vw=cv.width/dpr,vh=cv.height/dpr,vg=g.createRadialGradient(vw/2,vh/2,0,vw/2,vh/2,Math.max(vw,vh)*.75);vg.addColorStop(.45,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.74)');g.fillStyle=vg;g.fillRect(0,0,vw,vh);
+ if(fade>0){g.fillStyle=`rgba(0,0,0,${fade})`;g.fillRect(0,0,vw,vh)}}
+function loop(ts){const t=ts/1000,dt=Math.min(.05,t-last);last=t;if(started)upd(dt);render(t);requestAnimationFrame(loop)}
+cv.addEventListener('pointerup',e=>{if(!started)return;hap();const x=(e.clientX-ox)/k,y=(e.clientY-oy)/k;
+ const h=[...cur].reverse().find(h=>x>h.x&&x<h.x+h.w&&y>h.y&&y<h.y+h.h);
+ if(h){P.tx=clamp(h.x+h.w/2,24,336);P.ty=clamp(h.y+h.h+16,412,615);pend=h}else{P.tx=clamp(x,24,336);P.ty=clamp(y,412,615);pend=null}});
+/* ---------- deduction & ending ---------- */
+function deduct(){const o=a=>`<option value="">— انتخاب کن —</option>`+a.map(x=>`<option>${x}</option>`).join('');
+ ov(`<h3>پرونده‌ی ماه خونین</h3><p>مغز متفکر، راه پخش و هدف را مشخص کن.</p><select id="k">${o(['سرتیپ نگهبانان','سرآشپز دربار','باغبان ماتیاس'])}</select><select id="m">${o(['از راه آب آشامیدنی قصر','از راه لوازم آرایشی و لب‌ها','از راه هوا و گردوغبار'])}</select><select id="v">${o(['فروش پادزهر و تصاحب قدرت','انتقام از لرد ویکتور','آزمایش علمی بی‌انگیزه'])}</select><button class="b" onclick="verdict()">صدور حکم نهایی</button><button class="b2" onclick="cl()">بستن</button>`)}
+function verdict(){if($('#k').value=='سرتیپ نگهبانان'&&$('#m').value.includes('لوازم آرایشی')&&$('#v').value.startsWith('فروش')){
+ try{const b=rdb();b.c3=1;localStorage.yg_ch=JSON.stringify(b)}catch(e){}SFX.chime();
+ ov(`<h1>پرونده‌ی لابستر بسته شد</h1><p>سرتیپ نگهبانان رهبر پنهان ماه خونین بود؛ او آرتور را برای جعل، سلین را برای بوسه‌ی مرگ و دانشمندانش را برای ساختن ویروس به کار گرفته بود. نقشه‌اش ساده بود: اول بیماری، بعد پادزهر، و بعد تاج.</p><p>تو هر سه قفل را گشودی، یگانه: اتاق قفل‌شده، بوسه‌ی مرگ و راز لابستر. قصر امشب بی‌ترس می‌خوابد.</p><p><b style="color:#6fe3c1">پایان سه‌گانه‌ی پرونده‌های کارآگاه یگانه</b></p><button class="b" onclick="location.href='index.html'">بازگشت به فهرست پرونده‌ها</button>`)}
+ else{SFX.err();say('استنتاجت با ادله جور درنمی‌آید؛ ضبط دوربین، دفترچه و ماجرای بوسه‌ی مرگ را دوباره بسنج.');cl()}}
+function start(){cl();S.f.intro=1;started=true;save();say('برای راه‌رفتن ضربه بزن. روی نقطه‌های درخشان ضربه بزن تا بررسی‌شان کنی؛ از درهای کمانی به اتاق‌های دیگر برو. هاپو همراه توست!')}
+rs();addEventListener('resize',rs);hud();requestAnimationFrame(loop);
+if(!rdb().c2)ov(`<h1>پرونده‌ی مُهروموم‌شده</h1><p>این فصل با حل‌کردن «بوسه‌ی مرگ» باز می‌شود.</p><button class="b" onclick="location.href='index.html'">بازگشت به فهرست</button>`);
+else if(S.f.intro)started=true;else ov(`<h1>فصل سوم<br>ویروس لابستر</h1><p>حلقه‌ی ماه خونین تو را تا دل جنگل آورده است. زیر این مه، آزمایشگاهی پنهان است که ویروسی به نام «لابستر» در آن ساخته شده.<br>کت صحرایی و عینک شب را بپوش، دوشیزه یگانه. باید بفهمی ویروس چطور ساخته شد و چه کسی پشت آن است.</p><button class="b" onclick="start()">ورود به جنگل</button>`);
+</script></body></html>

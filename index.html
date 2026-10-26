@@ -13,23 +13,22 @@ main{width:100%;max-width:520px;position:relative}
 @keyframes r{to{background-position:-14px 28px}}
 h1{text-align:center;font-size:28px;font-weight:900;color:var(--g);text-shadow:0 0 20px #c9a24b66;line-height:1.6}
 .sub{text-align:center;font-size:13px;opacity:.85;line-height:2;margin:6px 0 16px}
-.card{position:relative;overflow:hidden;display:flex;gap:12px;align-items:center;margin:12px 0;padding:14px;border:1px solid var(--g);border-radius:16px;background:linear-gradient(135deg,var(--c1),var(--c2));box-shadow:0 8px 24px #000a;cursor:pointer;transition:transform .15s,box-shadow .2s}
+.card{position:relative;overflow:hidden;display:flex;gap:12px;align-items:center;margin:12px 0;padding:14px;border:1px solid var(--g);border-radius:16px;background:linear-gradient(135deg,var(--c1),var(--c2));box-shadow:0 8px 24px #000a;cursor:pointer;transition:transform .15s}
 .card:active{transform:scale(.98)}
 .card.lock{filter:grayscale(.9) brightness(.55);cursor:default}
-.card.gold{border:2px solid #ffe082;background:linear-gradient(135deg,#523608 0%,#241504 55%,#4a2f06 100%);box-shadow:0 0 28px #f3d27a44,inset 0 0 20px #ffd87522}
-.card.gold::after{content:"";position:absolute;inset:-40%;background:linear-gradient(90deg,transparent,#fff6c828,transparent);transform:rotate(25deg);animation:sh 3.8s infinite;pointer-events:none}
+.card.gold{border:1.5px solid #ffd875;background:linear-gradient(135deg,#4d3208 0%,#211304 55%,#422a06 100%);box-shadow:0 8px 28px #000c,0 0 20px #c9a24b33,inset 0 0 16px #ffd8751a}
+.card.gold::after{content:"";position:absolute;inset:-40%;background:linear-gradient(90deg,transparent,#fff6c822,transparent);transform:rotate(25deg);animation:sh 4s infinite;pointer-events:none}
 @keyframes sh{0%{transform:translateX(-120%) rotate(25deg)}100%{transform:translateX(120%) rotate(25deg)}}
 .card svg{flex:0 0 96px;width:96px;height:150px;filter:drop-shadow(0 4px 6px #000);z-index:1}
 .tx{z-index:1;flex:1}
 .tx b{display:block;font-size:11px;color:var(--g)}
-.card.gold .tx b{color:#ffe082}
-.tx h2{font-size:20px;margin:2px 0 6px;color:#fff3cf}
-.card.gold .tx h2{color:#fff0b8;text-shadow:0 0 12px #f3d27a66}
+.card.gold .tx b{color:#ffd875}
+.tx h2{font-size:21px;margin:2px 0 6px;color:#fff3cf}
 .tx p{font-size:12.5px;line-height:1.95}
-.pills{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 2px}
-.pill{font-size:11px;padding:2px 9px;border-radius:12px;background:#0007;border:1px solid #ffd87577;color:#ffe8a3;font-weight:700}
+.pills{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 6px}
+.pill{font-size:11px;padding:1px 9px;border-radius:12px;background:#0007;border:1px solid #ffd87566;color:#ffe8a3;font-weight:700}
 .st{display:inline-block;margin-top:8px;font-size:12px;padding:3px 12px;border-radius:20px;border:1px solid var(--g);background:#0008}
-.card.gold .st{background:linear-gradient(#ffd875,#c99426);color:#1f1102;border-color:#fff4c2;font-weight:900;box-shadow:0 3px 10px #0008}
+.card.gold .st{background:linear-gradient(#ffd875,#b8841e);color:#1a0e02;border-color:#fff2b8;font-weight:700}
 .rs{display:block;margin:18px auto 0;font:inherit;font-size:12px;color:#ecdcb4aa;background:none;border:0;text-decoration:underline;cursor:pointer}
 #toast{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom));left:16px;right:16px;max-width:488px;margin:auto;background:#120b14f2;border:1px solid var(--g);border-radius:12px;padding:10px 14px;font-size:13px;line-height:1.9;opacity:0;transition:.3s;pointer-events:none;text-align:center;z-index:10}
 #toast.on{opacity:1}
@@ -49,14 +48,13 @@ const $=s=>document.querySelector(s);
 const tg=window.Telegram&&Telegram.WebApp;try{tg.ready();tg.expand()}catch(e){}
 const rd=k=>{try{return JSON.parse(localStorage[k])||{}}catch(e){return{}}};
 const fa=n=>String(n).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
-const a=rd('yg409'),b=rd('yg_ch'),hm=b.home||{}; // yg409 = ذخیره‌ی فصل ۱ ، yg_ch = پیشرفت فصل‌های ۲ و ۳ و عمارت
+const a=rd('yg409'),b=rd('yg_ch'),hm=b.home||{};
 const done=[!!a.won,!!b.c2,!!b.c3];
-const READY=[1,1,1]; // هر سه فصل در گیت‌هاب آپلود و فعال هستند
+const READY=[1,1,1];
 const open=i=>i==0||done[i-1];
 
 const fig=(d,hair,acc,hat,extra='')=>`<svg viewBox="0 0 96 150"><ellipse cx="48" cy="144" rx="30" ry="5" fill="#0007"/><rect x="21" y="68" width="11" height="40" rx="5" fill="${d[0]}"/><rect x="64" y="68" width="11" height="40" rx="5" fill="${d[0]}"/><path d="M32 66h32l18 78H14z" fill="${d[0]}"/><path d="M38 66h20l8 78H30z" fill="${d[1]}" opacity=".6"/><rect x="31" y="90" width="34" height="5" fill="${acc}"/><path d="M29 38c0-24 38-24 38 0v46c-5 4-9 2-10-6V50H39v28c-1 8-5 10-10 6z" fill="${hair}"/><rect x="43" y="56" width="10" height="12" fill="#e8b896"/><ellipse cx="48" cy="44" rx="14" ry="16" fill="#f5d2b8"/><path d="M33 42c4-15 26-15 30 0-8-6-22-8-30 0z" fill="${hair}"/><g><ellipse cx="42" cy="46" rx="3.8" ry="4.6" fill="#fff"/><circle cx="42" cy="47" r="2.7" fill="#7a4a22"/><circle cx="41" cy="45.5" r="1" fill="#fff"/><ellipse cx="54" cy="46" rx="3.8" ry="4.6" fill="#fff"/><circle cx="54" cy="47" r="2.7" fill="#7a4a22"/><circle cx="53" cy="45.5" r="1" fill="#fff"/></g><path d="M44 54q4 3 8 0" stroke="#b0485a" stroke-width="1.4" fill="none"/>${hat}${extra}</svg>`;
 
-// آواتار کارت طلایی عمارت (دوشیزه یگانه با تاج طلایی، فنجان قهوه داغ و هاپو)
 const homeSvg=fig(
   ['#a8741a','#ffd875'],'#1f1224','#fff3cf',
   '<path d="M33 28l5-12 5 8 5-12 5 12 5-8 5 12z" fill="#ffe082" stroke="#8a6a22"/><circle cx="48" cy="14" r="2.6" fill="#ff2e63"/>',
@@ -76,12 +74,12 @@ const CH=[
 
 function draw(){
   const mood=fa(hm.mood??90),mus=fa(hm.muscle??0);
-  $('#homeBox').innerHTML=`<div class="card gold" onclick="goHome()">${homeSvg}<div class="tx"><b>✨ کارت طلایی ویژه — زندگی شخصی، کافه و باشگاه</b><h2>عمارت دوشیزه یگانه</h2><div class="pills"><span class="pill">💖 حالِ خوب: ${mood}٪</span><span class="pill">💪 سطح عضلات: ${mus}</span></div><p>استراحت در نشیمن با نور بنفش خواب، بازی شطرنج، پخت غذا و دم‌کردن لته در آشپزخانه یا تمرین در باشگاه بدنسازی؛ هاپو هم در لونه‌اش منتظر توست!</p><span class="st">👑 ورود به عمارت سه‌بعدی</span></div></div>`;
+  $('#homeBox').innerHTML=`<div class="card gold" onclick="goHome()">${homeSvg}<div class="tx"><b>اقامتگاه شخصی — استراحت، کافه و باشگاه</b><h2>عمارت دوشیزه یگانه</h2><div class="pills"><span class="pill">💖 حالِ خوب: ${mood}٪</span><span class="pill">💪 سطح: ${mus}</span></div><p>جایی دور از هیاهوی پرونده‌ها؛ در نشیمن استراحت کن، شطرنج بازی کن، در آشپزخانه قهوه و غذا آماده کن یا در باشگاه تمرین کن.</p><span class="st">ورود به عمارت</span></div></div>`;
   $('#list').innerHTML=CH.map((c,i)=>{const o=open(i);
     return `<div class="card ${o?'':'lock'}" style="--c1:${c.c[0]};--c2:${c.c[1]}" onclick="go(${i})">${c.g}<div class="tx"><b>${c.n} — ${c.p}</b><h2>${o?c.t:'پرونده‌ی مُهروموم‌شده'}</h2><p>${o?c.s:'با حل‌کردن «'+CH[i-1].t+'» باز می‌شود.'}</p><span class="st">${done[i]?'✓ حل شد':o?(READY[i]?'▶ شروع':'به‌زودی'):'🔒 قفل'}</span></div></div>`}).join('');
 }
 function toast(m){const e=$('#toast');e.textContent=m;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),3200)}
-function goHome(){try{tg.HapticFeedback.impactOccurred('medium')}catch(e){}location.href='home.html'}
+function goHome(){try{tg.HapticFeedback.impactOccurred('light')}catch(e){}location.href='home.html'}
 function go(i){try{tg.HapticFeedback.impactOccurred('light')}catch(e){}
   if(!open(i)){toast('این پرونده قفل است؛ ابتدا «'+CH[i-1].t+'» را حل کن.');return}
   if(!READY[i]){toast('این فصل در حال ساخت است و به‌زودی باز می‌شود.');return}
